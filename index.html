@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>家計精算</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <p class="eyebrow">ふたりの家計</p>
+      <h1>家計精算</h1>
+    </header>
+
+    <section class="card settings-card" aria-labelledby="month-heading">
+      <div class="section-heading">
+        <h2 id="month-heading">対象月と負担比率</h2>
+      </div>
+
+      <label class="field-label" for="targetMonth">対象月</label>
+      <input id="targetMonth" class="month-input" type="month">
+
+      <div class="ratio-heading">
+        <span class="field-label">負担比率</span>
+        <span class="ratio-preview" id="ratioPreview">俺 4：彼女 3</span>
+      </div>
+      <div class="ratio-fields">
+        <label>
+          <span>俺</span>
+          <input id="myRatio" type="number" min="0.1" step="0.1" inputmode="decimal" aria-label="俺の負担比率">
+        </label>
+        <span class="ratio-colon" aria-hidden="true">：</span>
+        <label>
+          <span>彼女</span>
+          <input id="partnerRatio" type="number" min="0.1" step="0.1" inputmode="decimal" aria-label="彼女の負担比率">
+        </label>
+      </div>
+      <p class="hint" id="ratioHint">比率はこの月だけに保存されます。</p>
+    </section>
+
+    <section class="card input-card" aria-labelledby="input-heading">
+      <div class="section-heading">
+        <span class="step-number">1</span>
+        <h2 id="input-heading">支払者</h2>
+      </div>
+      <div class="choice-grid payer-grid" id="payerButtons" role="group" aria-label="支払者"></div>
+
+      <div class="section-heading spaced">
+        <span class="step-number">2</span>
+        <h2>カテゴリー</h2>
+      </div>
+      <div class="choice-grid category-grid" id="categoryButtons" role="group" aria-label="カテゴリー"></div>
+
+      <div class="section-heading spaced">
+        <span class="step-number">3</span>
+        <h2>金額</h2>
+      </div>
+      <div class="amount-field">
+        <input id="amount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="0" aria-label="金額">
+        <span>円</span>
+      </div>
+      <p class="form-error" id="formError" role="alert"></p>
+
+      <button id="addExpense" class="primary-button" type="button">
+        <span class="button-step">4</span>追加する
+      </button>
+    </section>
+
+    <section class="card result-card" aria-labelledby="result-heading">
+      <div class="section-heading result-title-row">
+        <h2 id="result-heading">今月の精算</h2>
+        <span class="month-badge" id="monthBadge"></span>
+      </div>
+
+      <div class="total-amount">
+        <span>支出合計</span>
+        <strong id="grandTotal">0円</strong>
+      </div>
+
+      <div class="summary-grid">
+        <div>
+          <span>俺が払った額</span>
+          <strong id="myPaid">0円</strong>
+          <small id="myShare">本来の負担 0円</small>
+        </div>
+        <div>
+          <span>彼女が払った額</span>
+          <strong id="partnerPaid">0円</strong>
+          <small id="partnerShare">本来の負担 0円</small>
+        </div>
+      </div>
+
+      <div class="settlement" id="settlement" aria-live="polite">
+        <span>精算結果</span>
+        <strong>精算はありません</strong>
+      </div>
+
+      <h3>カテゴリー別</h3>
+      <div class="category-summary" id="categorySummary"></div>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <div class="section-heading list-heading-row">
+        <h2 id="list-heading">支出一覧</h2>
+        <span id="expenseCount">0件</span>
+      </div>
+      <div id="expenseList" class="expense-list"></div>
+    </section>
+
+    <section class="card line-card" aria-labelledby="line-heading">
+      <div class="section-heading">
+        <h2 id="line-heading">LINE用テキスト</h2>
+      </div>
+      <textarea id="lineText" readonly aria-label="LINE用精算結果"></textarea>
+      <button id="copyButton" class="copy-button" type="button">コピーする</button>
+      <p id="copyStatus" class="copy-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <template id="expenseItemTemplate">
+    <div class="expense-item">
+      <div class="expense-main">
+        <div class="expense-meta">
+          <span class="payer-chip"></span>
+          <span class="expense-category"></span>
+        </div>
+        <strong class="expense-amount"></strong>
+      </div>
+      <button class="delete-button" type="button" aria-label="支出を削除">削除</button>
+    </div>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
