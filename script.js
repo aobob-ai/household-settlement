@@ -30,6 +30,7 @@ const elements = {
   lineText: document.querySelector("#lineText"),
   copyButton: document.querySelector("#copyButton"),
   copyStatus: document.querySelector("#copyStatus"),
+  addedToast: document.querySelector("#addedToast"),
   expenseItemTemplate: document.querySelector("#expenseItemTemplate")
 };
 
@@ -38,6 +39,7 @@ let selectedPayer = "my";
 let selectedCategory = CATEGORIES[0];
 let currentMonth = getCurrentMonth();
 let ratioSaveTimer;
+let toastTimer;
 
 init();
 
@@ -187,6 +189,7 @@ function addExpense() {
   elements.formError.textContent = "";
   elements.copyStatus.textContent = "";
   render();
+  showAddedToast();
   elements.amount.focus();
 }
 
@@ -209,13 +212,22 @@ function render() {
 
 function calculateTotals(data) {
   const byCategory = Object.fromEntries(CATEGORIES.map((category) => [category, 0]));
+  const byPayerCategory = {
+    my: Object.fromEntries(CATEGORIES.map((category) => [category, 0])),
+    partner: Object.fromEntries(CATEGORIES.map((category) => [category, 0]))
+  };
   let myPaid = 0;
   let partnerPaid = 0;
 
   data.expenses.forEach((expense) => {
+    const payer = expense.payer === "partner" ? "partner" : "my";
     if (!(expense.category in byCategory)) byCategory[expense.category] = 0;
+    if (!(expense.category in byPayerCategory.my)) byPayerCategory.my[expense.category] = 0;
+    if (!(expense.category in byPayerCategory.partner)) byPayerCategory.partner[expense.category] = 0;
+
     byCategory[expense.category] += expense.amount;
-    if (expense.payer === "my") myPaid += expense.amount;
+    byPayerCategory[payer][expense.category] += expense.amount;
+    if (payer === "my") myPaid += expense.amount;
     else partnerPaid += expense.amount;
   });
 
@@ -229,7 +241,7 @@ function calculateTotals(data) {
   const partnerAdvanceForMy = Math.round(partnerPaid * data.ratio.my / ratioTotal);
   const partnerToMy = myAdvanceForPartner - partnerAdvanceForMy;
 
-  return { byCategory, myPaid, partnerPaid, total, myExpected, partnerExpected, partnerToMy };
+  return { byCategory, byPayerCategory, myPaid, partnerPaid, total, myExpected, partnerExpected, partnerToMy };
 }
 
 function renderSummary(data, totals) {
@@ -304,6 +316,9 @@ function createLineText(data, totals) {
     lines.push(`${category}${padding}${formatYen(totals.byCategory[category])}`);
   });
   lines.push("");
+  lines.push(`俺経費　　${formatYen(totals.myPaid)}`);
+  lines.push(`彼女経費　${formatYen(totals.partnerPaid)}`);
+  lines.push("");
 
   const roundedSettlement = Math.round(totals.partnerToMy);
   if (roundedSettlement === 0) {
@@ -319,8 +334,8 @@ function createLineText(data, totals) {
   const paidA = roundedSettlement > 0 ? totals.myPaid : totals.partnerPaid;
   const paidB = roundedSettlement > 0 ? totals.partnerPaid : totals.myPaid;
   const ratioTotal = data.ratio.my + data.ratio.partner;
-  const expressionA = expenseExpression(data.expenses, payerA);
-  const expressionB = expenseExpression(data.expenses, payerB);
+  const expressionA = expenseExpression(totals.byPayerCategory[payerA], payerA);
+  const expressionB = expenseExpression(totals.byPayerCategory[payerB], payerB);
   const termA = Math.round(paidA * ratioA / ratioTotal);
   const termB = Math.round(paidB * ratioB / ratioTotal);
 
@@ -331,16 +346,23 @@ function createLineText(data, totals) {
   return lines.join("\n");
 }
 
-function expenseExpression(expenses, payer) {
-  const totalsByCategory = new Map();
-  expenses.filter((expense) => expense.payer === payer).forEach((expense) => {
-    totalsByCategory.set(expense.category, (totalsByCategory.get(expense.category) || 0) + expense.amount);
-  });
-  const amounts = CATEGORIES
-    .filter((category) => totalsByCategory.has(category))
-    .map((category) => formatNumber(totalsByCategory.get(category)));
-  if (amounts.length === 0) return "0";
-  return amounts.length === 1 ? amounts[0] : `(${amounts.join(" + ")})`;
+function expenseExpression(totalsByCategory, payer) {
+  const payerLabel = payer === "my" ? "俺経費" : "彼女経費";
+  const parts = CATEGORIES
+    .filter((category) => totalsByCategory[category] > 0)
+    .map((category) => `${category} ${formatYen(totalsByCategory[category])}`);
+  if (parts.length === 0) return `(${payerLabel}: 0)`;
+  return `(${payerLabel}: ${parts.join(" + ")})`;
+}
+
+function showAddedToast() {
+  clearTimeout(toastTimer);
+  elements.addedToast.classList.remove("is-visible");
+  void elements.addedToast.offsetWidth;
+  elements.addedToast.classList.add("is-visible");
+  toastTimer = setTimeout(() => {
+    elements.addedToast.classList.remove("is-visible");
+  }, 1500);
 }
 
 async function copyLineText() {

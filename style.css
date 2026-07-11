@@ -27,6 +27,29 @@ body {
 button, input, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
+.added-toast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 20;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: rgba(23, 33, 27, .92);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.96);
+  transition: opacity .35s ease, transform .35s ease;
+  box-shadow: 0 12px 30px rgba(23, 33, 27, .24);
+}
+
+.added-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
 .app {
   width: min(100%, 560px);
   margin: 0 auto;
